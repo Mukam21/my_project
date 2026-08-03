@@ -1,0 +1,151 @@
+================================================================================
+                    AVITO RECAP BACKEND - АРХИТЕКТУРА ПРОЕКТА
+================================================================================
+
+backend/
+│
+├── cmd/                            # ТОЧКИ ВХОДА В ПРИЛОЖЕНИЕ
+│   └── server/
+│       └── main.go                 # Инициализация config, logger, DB, HTTP сервера, DI
+│
+├── internal/                       # ВНУТРЕННИЙ КОД (НЕДОСТУПЕН ИЗВНЕ)
+│   │
+│   ├── domain/                     # 🔴 СЛОЙ 1: ENTITIES (БИЗНЕС-СУЩНОСТИ)
+│   │   ├── user.go                 # Сущность User: ID, Name, Avatar, RegisteredAt, ProfileType
+│   │   ├── action.go               # Сущность Action: ID, UserID, Type, CategoryID, Category, CreatedAt
+│   │   ├── category.go             # Сущность Category: ID, Name
+│   │   ├── achievement.go          # Сущность Achievement: Slug, Title, Description, Icon, Category
+│   │   │                           # + PredefinedAchievements (7 ачивок с условиями)
+│   │   └── recap.go                # Сущность Recap: UserID, Year, TotalViews, TotalMessages,
+│   │                               # TotalPurchases, TotalSales, TopCategories, Achievements, ActivityDays
+│   │
+│   ├── usecase/                    # 🟠 СЛОЙ 2: USE CASES (БИЗНЕС-ЛОГИКА)
+│   │   ├── generator/              # ГЕНЕРАЦИЯ ИТОГОВ
+│   │   │   ├── interface.go        # Интерфейс GenerateRecapUseCase: Execute(ctx, userID, year) (*Recap, error)
+│   │   │   ├── generator.go        # Реализация: получение действий → подсчёт метрик → назначение ачивок → сохранение
+│   │   │   ├── metrics.go          # Подсчёт метрик: TotalViews, TotalMessages, TopCategories, ActivityDays
+│   │   │   └── achievements.go     # Назначение ачивок: проверка условий (7 штук)
+│   │   └── profile/                # РАБОТА С ПРОФИЛЯМИ
+│   │       ├── interface.go        # Интерфейс GetProfileUseCase: Execute(ctx, userID) (*User, error)
+│   │       │                       # + GetAllProfiles(ctx) ([]User, error)
+│   │       └── profile.go          # Реализация: получение пользователя/списка профилей из репозитория
+│   │
+│   ├── repository/                 # 🟡 СЛОЙ 3: INTERFACE ADAPTERS (ПОРТЫ)
+│   │   ├── interfaces.go           # ИНТЕРФЕЙСЫ (контракты для БД)
+│   │   │                           # - UserRepository: GetByID, GetAllTestProfiles
+│   │   │                           # - ActionRepository: GetByUserAndYear
+│   │   │                           # - RecapRepository: Save, GetByUserAndYear
+│   │   ├── postgres/               # РЕАЛИЗАЦИЯ ДЛЯ POSTGRESQL (Backend 2)
+│   │   │   ├── user.go             # UserRepository: SELECT * FROM users WHERE id = $1
+│   │   │   ├── action.go           # ActionRepository: SELECT * FROM actions WHERE user_id = $1 AND year = $2
+│   │   │   └── recap.go            # RecapRepository: INSERT/UPDATE/SELECT recaps (JSONB)
+│   │   └── redis/                  # РЕАЛИЗАЦИЯ ДЛЯ REDIS (КЭШ) (Backend 2)
+│   │       └── recap_cache.go      # Кэширование Recap: GET/SET/DELETE в Redis
+│   │
+│   ├── delivery/                   # 🟡 СЛОЙ 3: INTERFACE ADAPTERS (ПРЕДСТАВЛЕНИЕ)
+│   │   ├── dto/                    # DATA TRANSFER OBJECTS (Backend 1)
+│   │   │   ├── profile_response.go # Ответ API: ProfileResponse + FromDomain()
+│   │   │   └── recap_response.go   # Ответ API: RecapResponse + FromDomain()
+│   │   ├── handlers/               # HTTP ОБРАБОТЧИКИ (Backend 3)
+│   │   │   ├── profile_handler.go  # GET /api/profiles, GET /api/profiles/{id}
+│   │   │   └── recap_handler.go    # POST /api/recap/generate, GET /api/recap/{user_id}/{year}
+│   │   └── middleware/             # HTTP МИДЛВАРЫ (Backend 3)
+│   │       ├── logger.go           # Логирование запросов
+│   │       ├── recovery.go         # Восстановление после паники
+│   │       └── cors.go             # CORS настройки
+│   │
+│   ├── config/                     # КОНФИГУРАЦИЯ
+│   │   └── config.go               # Загрузка .env, парсинг переменных, DSN для БД, Redis
+│   │
+│   └── server/                     # НАСТРОЙКА HTTP СЕРВЕРА (Backend 3)
+│       └── server.go               # Gin настройки, маршруты, middleware, запуск
+│
+├── pkg/                            # ПЕРЕИСПОЛЬЗУЕМЫЕ ПАКЕТЫ
+│   └── errors/                     # КАСТОМНЫЕ ОШИБКИ
+│       └── errors.go               # Domain errors: ErrNotFound, ErrInvalidID, ErrInvalidYear
+│
+├── tests/                          # ТЕСТЫ
+│   ├── unit/                       # ЮНИТ-ТЕСТЫ (Backend 1)
+│   │   ├── generator_test.go       # Тесты для генератора (mock репозитории)
+│   │   └── achievements_test.go    # Тесты для назначения ачивок
+│   └── integration/                # ИНТЕГРАЦИОННЫЕ ТЕСТЫ (Backend 3)
+│       ├── profile_test.go         # Тесты API /api/profiles
+│       └── recap_test.go           # Тесты API /api/recap/*
+│
+├── migrations/                     # SQL МИГРАЦИИ (Backend 2)
+│   ├── 001_init.up.sql             # Создание таблиц: users, categories, actions, recaps
+│   ├── 001_init.down.sql           # Откат: удаление таблиц
+│   ├── 002_seed_test_profiles.up.sql   # Тестовые профили (4-5 штук)
+│   └── 002_seed_test_profiles.down.sql # Удаление тестовых профилей
+│
+├── docs/                           # SWAGGER ДОКУМЕНТАЦИЯ (Backend 3)
+│   ├── docs.go                     # Swagger конфигурация
+│   ├── swagger.json                # OpenAPI спецификация
+│   └── swagger.yaml                # OpenAPI спецификация
+│
+├── .env                            # Переменные окружения (НЕ В GIT!)
+├── .env.example                    # Шаблон .env (В GIT!)
+├── .gitignore                      # Игнорируемые файлы
+├── Dockerfile                      # Docker образ (Backend 3)
+├── docker-compose.yml              # Docker Compose: PostgreSQL + Redis + Application
+├── go.mod                          # Зависимости Go модуля
+├── go.sum                          # Хеши зависимостей
+├── README.md                       # Документация бэкенда
+└── ARCHITECTURE.txt                # ЭТОТ ФАЙЛ — архитектура проекта
+
+
+================================================================================
+                          ПОТОК ДАННЫХ (REQUEST FLOW)
+================================================================================
+
+  HTTP Request (Gin)
+        ↓
+  Middleware (Logger, Recovery, CORS)
+        ↓
+  Router → Handler (парсинг параметров, выбор UseCase)
+        ↓
+  Handler (парсинг DTO, валидация, вызов UseCase)
+        ↓
+  Use Case (бизнес-логика)
+        │
+        ├──→ Repository (получение данных из БД)
+        │         ↓
+        │   Database (PostgreSQL)
+        │         ↓
+        │   Domain (конвертация в сущности)
+        │
+        ├──→ Metrics (подсчёт: просмотры, сообщения, покупки, продажи, топ-категории)
+        │
+        └──→ Achievements (назначение ачивок по условиям)
+        │
+        ↓
+  DTO (конвертация Domain → DTO)
+        ↓
+  HTTP Response (JSON)
+
+================================================================================
+                               ПРИМЕРНЫЕ API ЭНДПОИНТЫ
+================================================================================
+
+  GET  /api/profiles                     → Список тестовых профилей
+  GET  /api/profiles/{id}                → Профиль по ID
+  POST /api/recap/generate               → Запуск генерации итогов
+       Body: { "user_id": "uuid", "year": 2025 }
+  GET  /api/recap/{user_id}/{year}       → Получить готовый Recap
+  GET  /api/recap/{user_id}/{year}/share → Share-card (без чувствительных данных)
+  GET  /health                           → Health check
+
+================================================================================
+                         ЗАВИСИМОСТИ МЕЖДУ СЛОЯМИ
+================================================================================
+
+  Внешний мир (HTTP)
+        ↓
+  Handlers (Backend 3)  ←─── DTO (Backend 1)
+        ↓
+  Use Cases (Backend 1) ←─── Repository Interfaces (Backend 1)
+        ↓                              ↓
+  Domain (Backend 1)        Repository Impl (Backend 2)
+
+  ⚠️ ПРАВИЛО: Зависимости направлены ВНУТРЬ!
+     Внешние слои зависят от внутренних, но не наоборот.
