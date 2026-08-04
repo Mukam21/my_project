@@ -1,1 +1,38 @@
 package generator
+
+import (
+	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
+)
+
+func assignAchievements(metrics *UserMetrics) []domain.Achievement {
+	var result []domain.Achievement
+
+	for _, ach := range domain.DefaultAchievements {
+		if checkCondition(ach, metrics) {
+			result = append(result, ach)
+		}
+	}
+
+	return result
+}
+
+func checkCondition(ach domain.Achievement, metrics *UserMetrics) bool {
+	switch ach.Slug {
+	case "curious":
+		return metrics.TotalViews >= 500
+	case "explorer":
+		return metrics.TotalViews >= 1000
+	case "social_butterfly":
+		return metrics.TotalMessages >= 50
+	case "seller_master":
+		return metrics.TotalSales >= 5
+	case "shopaholic":
+		return metrics.TotalPurchases >= 10
+	case "veteran":
+		return metrics.ActivityDays >= 300
+	case "enthusiast":
+		return metrics.ActivityDays >= 100
+	default:
+		return false
+	}
+}
