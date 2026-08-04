@@ -5,6 +5,28 @@ export interface PurchaseRecord {
   date: string
 }
 
+export interface SaleRecord extends PurchaseRecord {
+  inquiriesCount: number
+}
+
+export interface ListingViewRecord {
+  title: string
+  category: string
+  likes: number
+  viewedAt: string
+  viewCount: number
+}
+
+export interface ProfileMetrics {
+  activeDays: number
+  city: string
+  createdListings: number
+  favoriteListings: number
+  likes: number
+  rating: number
+  reviews: number
+}
+
 export interface TestProfile {
   id: number
   name: string
@@ -12,10 +34,10 @@ export interface TestProfile {
   avatarUrl: string
   avatarFallback: string
   accentColor: string
-  purchases: number
-  sales: number
+  chatsCount: number
   favoriteCategory: string
-  largestPurchase: PurchaseRecord
-  smallestPurchase: PurchaseRecord
-  annualSpending: number
+  metrics: ProfileMetrics
+  purchases: PurchaseRecord[]
+  sales: SaleRecord[]
+  listingViews: ListingViewRecord[]
 }
