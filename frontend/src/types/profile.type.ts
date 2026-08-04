@@ -1,14 +1,21 @@
+export interface PurchaseRecord {
+  title: string
+  category: string
+  price: number
+  date: string
+}
+
 export interface TestProfile {
   id: number
   name: string
-  memberSince: string
+  joinedAt: string
   avatarUrl: string
   avatarFallback: string
   accentColor: string
   purchases: number
-  topPurchaseCategory: string
   sales: number
-  saleMessages: number
-  favorites: number
-  chats: number
+  favoriteCategory: string
+  largestPurchase: PurchaseRecord
+  smallestPurchase: PurchaseRecord
+  annualSpending: number
 }
