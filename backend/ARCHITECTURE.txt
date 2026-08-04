@@ -20,21 +20,19 @@ backend/
 │   │                               # TotalPurchases, TotalSales, TopCategories, Achievements, ActivityDays
 │   │
 │   ├── usecase/                    # 🟠 СЛОЙ 2: USE CASES (БИЗНЕС-ЛОГИКА)
+|   |   ├── ports/                  # Интерфейсы (Ports)
+│   │   │   ├── user_repository.go
+│   │   │   ├── action_repository.go
+│   │   │   ├── recap_repository.go
+│   │   │   └── cache.go    
 │   │   ├── generator/              # ГЕНЕРАЦИЯ ИТОГОВ
-│   │   │   ├── interface.go        # Интерфейс GenerateRecapUseCase: Execute(ctx, userID, year) (*Recap, error)
 │   │   │   ├── generator.go        # Реализация: получение действий → подсчёт метрик → назначение ачивок → сохранение
 │   │   │   ├── metrics.go          # Подсчёт метрик: TotalViews, TotalMessages, TopCategories, ActivityDays
 │   │   │   └── achievements.go     # Назначение ачивок: проверка условий (7 штук)
 │   │   └── profile/                # РАБОТА С ПРОФИЛЯМИ
-│   │       ├── interface.go        # Интерфейс GetProfileUseCase: Execute(ctx, userID) (*User, error)
-│   │       │                       # + GetAllProfiles(ctx) ([]User, error)
 │   │       └── profile.go          # Реализация: получение пользователя/списка профилей из репозитория
 │   │
 │   ├── repository/                 # 🟡 СЛОЙ 3: INTERFACE ADAPTERS (ПОРТЫ)
-│   │   ├── interfaces.go           # ИНТЕРФЕЙСЫ (контракты для БД)
-│   │   │                           # - UserRepository: GetByID, GetAllTestProfiles
-│   │   │                           # - ActionRepository: GetByUserAndYear
-│   │   │                           # - RecapRepository: Save, GetByUserAndYear
 │   │   ├── postgres/               # РЕАЛИЗАЦИЯ ДЛЯ POSTGRESQL (Backend 2)
 │   │   │   ├── user.go             # UserRepository: SELECT * FROM users WHERE id = $1
 │   │   │   ├── action.go           # ActionRepository: SELECT * FROM actions WHERE user_id = $1 AND year = $2
@@ -82,16 +80,16 @@ backend/
 │   ├── docs.go                     # Swagger конфигурация
 │   ├── swagger.json                # OpenAPI спецификация
 │   └── swagger.yaml                # OpenAPI спецификация
-│
-├── .env                            # Переменные окружения (НЕ В GIT!)
-├── .env.example                    # Шаблон .env (В GIT!)
-├── .gitignore                      # Игнорируемые файлы
-├── Dockerfile                      # Docker образ (Backend 3)
-├── docker-compose.yml              # Docker Compose: PostgreSQL + Redis + Application
 ├── go.mod                          # Зависимости Go модуля
 ├── go.sum                          # Хеши зависимостей
 ├── README.md                       # Документация бэкенда
 └── ARCHITECTURE.txt                # ЭТОТ ФАЙЛ — архитектура проекта
+
+├── .env                            # Переменные окружения (НЕ В GIT!)
+├── .env.example                    # Шаблон .env (В GIT!)
+├── .gitignore                      # Игнорируемые файлы
+├── Dockerfile                      # Docker образ (Backend 3)
+└── docker-compose.yml              # Docker Compose: PostgreSQL + Redis + Application
 
 
 ================================================================================
@@ -149,3 +147,77 @@ backend/
 
   ⚠️ ПРАВИЛО: Зависимости направлены ВНУТРЬ!
      Внешние слои зависят от внутренних, но не наоборот.
+
+================================================================================
+                         ОТВЕТСТВЕННОСТЬ ПО КОМАНДЕ
+================================================================================
+
+  Backend 1 (Мукам) — Архитектура, домен, бизнес-логика, юнит-тесты
+  ─────────────────────────────────────────────────────────────────────
+   domain/          — все сущности
+   usecase/         — интерфейсы и реализация бизнес-логики
+   repository/interfaces.go — интерфейсы репозиториев
+   delivery/dto/    — DTO для API
+   config/          — конфигурация
+   tests/unit/      — юнит-тесты
+
+  Backend 2 — PostgreSQL, миграции, репозитории, тестовые профили
+  ─────────────────────────────────────────────────────────────────────
+   migrations/      — SQL миграции (up/down)
+   repository/postgres/ — реализация репозиториев
+   repository/redis/    — кэширование в Redis
+
+  Backend 3 — API, обработка ошибок, интеграционные тесты, Docker
+  ─────────────────────────────────────────────────────────────────────
+   delivery/handlers/   — HTTP обработчики
+   delivery/middleware/ — мидлвары
+   server/              — настройка HTTP сервера
+   tests/integration/   — интеграционные тесты
+   Dockerfile           — сборка образа
+   docs/                — Swagger документация
+
+================================================================================
+                              ТЕХНОЛОГИЧЕСКИЙ СТЕК
+================================================================================
+
+  Язык:           Go 1.22+
+  HTTP:           Gin (github.com/gin-gonic/gin)
+  БД:             PostgreSQL 15+
+  Кэш:            Redis 7+
+  Драйвер БД:     pgx/v5 (github.com/jackc/pgx/v5)
+  Логирование:    slog (стандартный пакет Go)
+  Конфигурация:   godotenv (github.com/joho/godotenv)
+  UUID:           google/uuid (github.com/google/uuid)
+  Тесты:          testify (github.com/stretchr/testify)
+  Swagger:        swaggo (github.com/swaggo/swag)
+  Линтер:         golangci-lint
+  Docker:         Docker Compose
+
+
+================================================================================
+                              КОМАНДЫ ЗАПУСКА
+================================================================================
+
+  Локальный запуск:
+    cd backend
+    go mod download
+    go run cmd/server/main.go
+
+  Через Docker:
+    docker-compose up -d   # Запустить PostgreSQL + Redis
+    docker-compose up      # Запустить всё (с логами)
+    docker-compose down    # Остановить
+
+  Тесты:
+    go test ./tests/unit/...      # Юнит-тесты
+    go test ./tests/integration/... # Интеграционные тесты
+    go test ./... -cover          # Покрытие
+
+  Линтер:
+    golangci-lint run ./...
+
+  Миграции:
+    migrate -path migrations -database "$DATABASE_URL" up
+    migrate -path migrations -database "$DATABASE_URL" down
+
+================================================================================
