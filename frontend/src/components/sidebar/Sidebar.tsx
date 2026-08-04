@@ -1,5 +1,5 @@
 import { Heart, Settings } from 'lucide-react'
-import favicon from '@/assets/avitoSquareIcon.svg'
+import favicon from '@/assets/avitoNotBackground.svg'
 import { ProfileAvatar } from './ProfileAvatar'
 
 const sidebarItems = [
