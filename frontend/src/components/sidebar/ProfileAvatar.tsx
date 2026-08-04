@@ -10,7 +10,7 @@ export function ProfileAvatar({ name }: ProfileAvatarProps) {
       disabled
       type="button"
     >
-      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#00aaff] text-sm font-bold text-white ring-4 ring-white">
+      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#00aaff] text-sm font-bold text-white ">
         Н
       </span>
       <span className="hidden min-w-0 lg:block">

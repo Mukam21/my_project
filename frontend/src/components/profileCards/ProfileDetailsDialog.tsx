@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { ArrowDownRight, ArrowUpRight, CalendarDays, Sparkles } from 'lucide-react'
 
+import { ActivityHistory } from './details/ActivityHistory'
+import { ProfileMetricsGrid } from './details/ProfileMetricsGrid'
 import { PurchaseDetailsCard } from './PurchaseDetailsCard'
 import { ProfileImage } from './ProfileImage'
 import {
@@ -13,12 +15,16 @@ import {
 import type { TestProfile } from '@/types/profile.type'
 import {formatDate} from '@/utils/formatterDate'
 import {formatCurrency} from '@/utils/formatterNumber'
+import { getAnnualSpending, getLargestPurchase, getSmallestPurchase } from '@/utils/profileAnalytics'
 interface ProfileDetailsDialogProps {
   children: ReactNode
   profile: TestProfile
 }
 
 export function ProfileDetailsDialog({ children, profile }: ProfileDetailsDialogProps) {
+  const largestPurchase = getLargestPurchase(profile.purchases)
+  const smallestPurchase = getSmallestPurchase(profile.purchases)
+
   return (
     <Dialog>
       {children}
@@ -37,9 +43,9 @@ export function ProfileDetailsDialog({ children, profile }: ProfileDetailsDialog
         </DialogHeader>
 
         <div className="grid grid-cols-3 gap-2.5">
-          <ModalStat label="Покупок" value={`${profile.purchases}`} />
-          <ModalStat label="Продаж" value={`${profile.sales}`} />
-          <ModalStat label="Потрачено" value={formatCurrency(profile.annualSpending)} />
+          <ModalStat label="Покупок" value={`${profile.purchases.length}`} />
+          <ModalStat label="Продаж" value={`${profile.sales.length}`} />
+          <ModalStat label="Потрачено" value={formatCurrency(getAnnualSpending(profile.purchases))} />
         </div>
 
         <section className="rounded-2xl bg-[#e8f6ff] p-4">
@@ -56,16 +62,19 @@ export function ProfileDetailsDialog({ children, profile }: ProfileDetailsDialog
             icon={ArrowUpRight}
             iconColor="text-[#965eeb]"
             label="Самая большая покупка"
-            purchase={profile.largestPurchase}
+            purchase={largestPurchase}
           />
           <PurchaseDetailsCard
             backgroundColor="bg-[#e7faef]"
             icon={ArrowDownRight}
             iconColor="text-[#00b956]"
             label="Самая маленькая покупка"
-            purchase={profile.smallestPurchase}
+            purchase={smallestPurchase}
           />
         </div>
+
+        <ProfileMetricsGrid profile={profile} />
+        <ActivityHistory profile={profile} />
       </DialogContent>
     </Dialog>
   )
