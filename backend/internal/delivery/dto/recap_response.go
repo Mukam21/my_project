@@ -3,7 +3,8 @@ package dto
 import (
 	"time"
 
-	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
+	"gooffer/backend/internal/domain"
+
 	"github.com/google/uuid"
 )
 

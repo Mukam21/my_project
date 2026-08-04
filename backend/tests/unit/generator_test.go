@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
-	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/usecase/generator"
+	"gooffer/backend/internal/domain"
+	"gooffer/backend/internal/usecase/generator"
+
 	"github.com/google/uuid"
 )
 

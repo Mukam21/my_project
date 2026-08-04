@@ -6,8 +6,9 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
-	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/usecase/ports"
+	"gooffer/backend/internal/domain"
+	"gooffer/backend/internal/usecase/ports"
+
 	"github.com/google/uuid"
 )
 
@@ -82,9 +83,7 @@ func (g *Generator) Execute(ctx context.Context, userID uuid.UUID, year int) (*d
 	metrics := calculateMetrics(actions)
 
 	// 6. Назначение ачивок
-	achievements := assignAchievements(metrics)
-
-	// 7. Формируем Recap
+	achievements := AssignAchievements(metrics) // 7. Формируем Recap
 	recap = domain.Recap{
 		ID:             uuid.New(),
 		UserID:         userID,
