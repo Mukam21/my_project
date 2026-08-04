@@ -1,6 +1,6 @@
 import { Heart, Settings } from 'lucide-react'
 import favicon from '@/assets/avitoSquareIcon.svg'
-import { ProfileAvatar } from '@/components/ProfileAvatar'
+import { ProfileAvatar } from './ProfileAvatar'
 
 const sidebarItems = [
   { label: 'Избранное', icon: Heart },

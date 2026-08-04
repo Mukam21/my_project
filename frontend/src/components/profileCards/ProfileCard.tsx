@@ -1,9 +1,9 @@
 import { CircleDollarSign, ShoppingBag, Sparkles, Tag } from 'lucide-react'
 
 import { DialogTrigger } from '@/components/ui/dialog'
-import { ProfileCardStat } from '@/components/ProfileCardStat'
-import { ProfileDetailsDialog } from '@/components/ProfileDetailsDialog'
-import { ProfileImage } from '@/components/ProfileImage'
+import { ProfileCardStat } from './ProfileCardStat'
+import { ProfileDetailsDialog } from './ProfileDetailsDialog'
+import { ProfileImage } from './ProfileImage'
 import type { TestProfile } from '@/types/profile.type'
 import {formatDateSince} from '@/utils/formatterDate'
 import {formatCurrency} from '@/utils/formatterNumber'

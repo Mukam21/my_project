@@ -1,6 +1,6 @@
-import { AddProfileButton } from '@/components/AddProfileButton'
-import { ProfileCard } from '@/components/ProfileCard'
-import { Sidebar } from '@/components/Sidebar'
+import { AddProfileButton } from '@/components/profileCards/AddProfileButton'
+import { ProfileCard } from '@/components/profileCards/ProfileCard'
+import { Sidebar } from '@/components/sidebar/Sidebar'
 import { TEST_PROFILES } from '@/constants/testProfiles'
 
 export function HomePage() {

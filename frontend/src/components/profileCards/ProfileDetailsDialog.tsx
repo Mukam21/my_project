@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { ArrowDownRight, ArrowUpRight, CalendarDays, Sparkles } from 'lucide-react'
 
-import { PurchaseDetailsCard } from '@/components/PurchaseDetailsCard'
-import { ProfileImage } from '@/components/ProfileImage'
+import { PurchaseDetailsCard } from './PurchaseDetailsCard'
+import { ProfileImage } from './ProfileImage'
 import {
   Dialog,
   DialogContent,
