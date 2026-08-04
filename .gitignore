@@ -1,0 +1,11 @@
+/.env
+/logs/
+*.db
+.idea
+.DS_Store
+/frontend/node_modules
+/frontend/.env.production
+/frontend/build/
+/frontend/.test-build/
+/frontend/.env
+/frontend/dist/
