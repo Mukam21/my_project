@@ -14,16 +14,18 @@ RUN CGO_ENABLED=0 go build \
 
 FROM alpine:3.22
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates wget
 
-COPY --from=build /out/server /server
+WORKDIR /app
+COPY --from=build /out/server /app/server
+COPY migrations /app/migrations
 
 ENV PORT=8000
 EXPOSE 8000
 
 USER 65532:65532
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
     CMD wget -qO- "http://127.0.0.1:${PORT}/health" >/dev/null || exit 1
 
-ENTRYPOINT ["/server"]
+ENTRYPOINT ["/app/server"]

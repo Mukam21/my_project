@@ -33,9 +33,10 @@ CREATE TABLE IF NOT EXISTS recaps (
     activity_days INT DEFAULT 0,
     top_categories JSONB DEFAULT '[]',
     achievements JSONB DEFAULT '[]',
+    recommendations JSONB DEFAULT '[]',
     generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(user_id, year)
+    UNIQUE (user_id, year)
 );
 
-CREATE INDEX IF NOT EXISTS idx_actions_user_created ON actions(user_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_actions_user_category ON actions(user_id, category_id);
+CREATE INDEX IF NOT EXISTS idx_actions_user_created ON actions (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_actions_user_category ON actions (user_id, category_id);

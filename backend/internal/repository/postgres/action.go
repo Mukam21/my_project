@@ -23,7 +23,7 @@ func (r *ActionRepository) GetByUserAndYear(ctx context.Context, userID uuid.UUI
 	end := fmt.Sprintf("%d-12-31", year)
 
 	query := `
-		SELECT 
+		SELECT
 			a.id,
 			a.user_id,
 			a.type,
@@ -44,20 +44,18 @@ func (r *ActionRepository) GetByUserAndYear(ctx context.Context, userID uuid.UUI
 	var actions []domain.Action
 	for rows.Next() {
 		var action domain.Action
-		err := rows.Scan(
+		if err := rows.Scan(
 			&action.ID,
 			&action.UserID,
 			&action.Type,
 			&action.CategoryID,
 			&action.Category,
 			&action.CreatedAt,
-		)
-		if err != nil {
+		); err != nil {
 			return nil, fmt.Errorf("failed to scan action: %w", err)
 		}
 		actions = append(actions, action)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}

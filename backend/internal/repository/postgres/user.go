@@ -45,13 +45,11 @@ func (r *UserRepository) ListProfiles(ctx context.Context) ([]domain.User, error
 	var users []domain.User
 	for rows.Next() {
 		var user domain.User
-		err := rows.Scan(&user.ID, &user.Name, &user.Avatar, &user.RegisteredAt, &user.ProfileType)
-		if err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Avatar, &user.RegisteredAt, &user.ProfileType); err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		users = append(users, user)
 	}
-
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}

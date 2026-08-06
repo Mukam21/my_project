@@ -2,55 +2,101 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"gooffer/backend/internal/config"
+	"gooffer/backend/internal/delivery/handlers"
+	"gooffer/backend/internal/repository/postgres"
+	redisrepo "gooffer/backend/internal/repository/redis"
+	"gooffer/backend/internal/server"
+	"gooffer/backend/internal/usecase/generator"
+	"gooffer/backend/internal/usecase/ports"
+	"gooffer/backend/internal/usecase/profile"
+	"gooffer/backend/migrations"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
-const defaultPort = "8000"
-
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	cfg := config.Load()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthHandler)
-
-	server := &http.Server{
-		Addr:              ":" + port,
-		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
-	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		<-shutdownCtx.Done()
+	pool, err := pgxpool.New(ctx, cfg.PostgresDSN())
+	if err != nil {
+		log.Fatalf("connect postgres: %v", err)
+	}
+	defer pool.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	if err := pool.Ping(ctx); err != nil {
+		log.Fatalf("ping postgres: %v", err)
+	}
+	logger.Info("postgres connected")
+
+	if err := migrations.Apply(ctx, pool); err != nil {
+		log.Fatalf("migrations: %v", err)
+	}
+	logger.Info("migrations applied")
+
+	var cache ports.Cache
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.RedisHost + ":" + cfg.RedisPort,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+	if err := rdb.Ping(ctx).Err(); err != nil {
+		logger.Warn("redis unavailable, cache disabled", slog.String("error", err.Error()))
+		_ = rdb.Close()
+		cache = redisrepo.NewNoopCache()
+	} else {
+		logger.Info("redis connected")
+		cache = redisrepo.NewRecapCache(rdb)
+		defer func() { _ = rdb.Close() }()
+	}
+
+	userRepo := postgres.NewUserRepository(pool)
+	actionRepo := postgres.NewActionRepository(pool)
+	recapRepo := postgres.NewRecapRepository(pool)
+
+	profileService := profile.New(logger, userRepo)
+	gen := generator.New(logger, userRepo, actionRepo, recapRepo, cache)
+
+	profileHandler := handlers.NewProfileHandler(logger, profileService)
+	recapHandler := handlers.NewRecapHandler(logger, gen)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = cfg.ServerPort
+	}
+
+	srv := server.New(server.Dependencies{
+		Logger:         logger,
+		Addr:           ":" + port,
+		ProfileHandler: profileHandler,
+		RecapHandler:   recapHandler,
+	})
+
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("server shutdown: %v", err)
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			logger.Error("server shutdown", slog.String("error", err.Error()))
 		}
 	}()
 
-	log.Printf("backend is listening on :%s", port)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	logger.Info("backend is listening", slog.String("port", port))
+	if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server stopped: %v", err)
-	}
-}
-
-func healthHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
-		log.Printf("write health response: %v", err)
 	}
 }
