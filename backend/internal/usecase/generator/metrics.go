@@ -3,7 +3,7 @@ package generator
 import (
 	"sort"
 
-	"gooffer/backend/internal/domain"
+	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
 )
 
 type UserMetrics struct {

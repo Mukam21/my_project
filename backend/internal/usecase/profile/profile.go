@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"gooffer/backend/internal/domain"
-	"gooffer/backend/internal/usecase/ports"
-
+	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
+	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/usecase/ports"
 	"github.com/google/uuid"
 )
 

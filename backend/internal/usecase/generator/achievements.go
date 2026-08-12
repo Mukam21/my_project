@@ -1,11 +1,10 @@
 package generator
 
 import (
-	"gooffer/backend/internal/domain"
+	"github.com/NikName2021/GoOffer_HackathonAvito/backend/internal/domain"
 )
 
-// AssignAchievements назначает ачивки на основе метрик
-func AssignAchievements(metrics *UserMetrics) []domain.Achievement {
+func assignAchievements(metrics *UserMetrics) []domain.Achievement {
 	var result []domain.Achievement
 
 	for _, ach := range domain.DefaultAchievements {
